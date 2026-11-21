@@ -1,0 +1,4 @@
+# Local / demo profile — enables deterministic E2E reset. Never use in production.
+app:
+  dev-reset:
+    enabled: true

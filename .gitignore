@@ -1,0 +1,39 @@
+# Build
+target/
+frontend/dist/
+frontend/dist-ssr/
+
+# Dependencies
+frontend/node_modules/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+credentials*.json
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+.DS_Store
+
+# Logs / temp
+*.log
+*.class
+*.tmp
+
+# Playwright / Vitest artifacts
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/
+frontend/coverage/
+
+# Docker
+pgdata/

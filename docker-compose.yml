@@ -1,0 +1,53 @@
+# Local/demo stack only — demo credentials, never production secrets.
+#
+# Services publish ports on the host and talk via host.docker.internal.
+# (Some nested/cloud Docker hosts block container-to-container bridge traffic.)
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: live_staffing
+      POSTGRES_USER: oloodi
+      POSTGRES_PASSWORD: oloodi
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oloodi -d live_staffing"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      DB_URL: jdbc:postgresql://host.docker.internal:5433/live_staffing
+      DB_USER: oloodi
+      DB_PASSWORD: oloodi
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,0 +1,12 @@
+node_modules
+dist
+test-results
+playwright-report
+playwright/.cache
+coverage
+*.log
+.env
+.env.*
+e2e
+measurements
+README.md
