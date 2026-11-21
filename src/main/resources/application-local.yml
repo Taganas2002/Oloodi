@@ -2,3 +2,9 @@
 app:
   dev-reset:
     enabled: true
+
+# Quiet Tomcat noise when browsers drop SSE EventSource (heartbeat / tab close).
+logging:
+  level:
+    org.apache.catalina.connector.ClientAbortException: OFF
+    org.apache.catalina.connector.CoyoteAdapter: WARN

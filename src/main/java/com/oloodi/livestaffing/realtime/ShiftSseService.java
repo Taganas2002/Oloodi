@@ -50,14 +50,23 @@ public class ShiftSseService {
             remove.run();
         });
         emitter.onError(ex -> {
-            log.info("SSE error shiftId={} reason={}", shiftId, safeReason(ex));
+            // Client disconnect / broken pipe is normal for EventSource teardown.
+            if (isClientDisconnect(ex)) {
+                log.debug("SSE client disconnect shiftId={} reason={}", shiftId, safeReason(ex));
+            } else {
+                log.info("SSE error shiftId={} reason={}", shiftId, safeReason(ex));
+            }
             remove.run();
         });
 
         try {
             emitter.send(SseEmitter.event().comment("connected"));
         } catch (IOException ex) {
-            log.info("SSE connect-send failed shiftId={} reason={}", shiftId, safeReason(ex));
+            if (isClientDisconnect(ex)) {
+                log.debug("SSE connect-send failed shiftId={} reason={}", shiftId, safeReason(ex));
+            } else {
+                log.info("SSE connect-send failed shiftId={} reason={}", shiftId, safeReason(ex));
+            }
             remove.run();
         }
         return emitter;
@@ -120,8 +129,14 @@ public class ShiftSseService {
             try {
                 emitter.send(SseEmitter.event().comment("heartbeat"));
             } catch (Exception ex) {
+                // Heartbeat against a closed tab → IOException / Broken pipe; drop quietly.
                 timingHooks.recordDeliveryFailure();
                 removeEmitter(shiftId, emitter);
+                try {
+                    emitter.complete();
+                } catch (Exception ignored) {
+                    // already dead
+                }
             }
         }
     }
@@ -151,6 +166,19 @@ public class ShiftSseService {
         if (emitters.isEmpty()) {
             emittersByShift.remove(shiftId, emitters);
         }
+    }
+
+    private static boolean isClientDisconnect(Throwable ex) {
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t instanceof IOException) {
+                return true;
+            }
+            String name = t.getClass().getName();
+            if (name.contains("ClientAbortException") || name.contains("AsyncRequestNotUsable")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String safeReason(Throwable ex) {
