@@ -63,7 +63,11 @@ export async function openWorker(
   attachGuards(page, `worker:${workerName}`)
   await page.goto('/worker')
   await expect(page.getByRole('heading', { name: 'Worker view' })).toBeVisible()
-  await page.getByLabel('Worker').selectOption({ label: workerName })
+  await page.getByRole('button', { name: workerName }).click()
+  await expect(page.getByRole('button', { name: workerName })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   await expect(page.getByRole('heading', { name: workerName })).toBeVisible()
   await expect(page.getByTestId('live-status')).toHaveAttribute('data-state', 'LIVE', {
     timeout: 30_000,
