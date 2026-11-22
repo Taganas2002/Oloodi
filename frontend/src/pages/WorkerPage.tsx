@@ -82,23 +82,45 @@ export function WorkerPage() {
 
       {banner ? <ErrorBanner message={banner} onDismiss={() => setBanner(null)} /> : null}
 
-      <div className="portal-card field">
-        <label htmlFor="worker-select">Worker</label>
-        <select
-          id="worker-select"
-          value={workerId}
-          aria-label="Worker"
-          onChange={(e) => {
-            setBanner(null)
-            setWorkerId(e.target.value)
-          }}
+      <div className="worker-picker portal-card">
+        <p className="worker-picker__label" id="worker-picker-label">
+          <span className="worker-picker__label-desktop">Who are you?</span>
+          <span className="worker-picker__label-mobile">Choose worker</span>
+        </p>
+        <div
+          className="worker-picker__options"
+          role="group"
+          aria-labelledby="worker-picker-label"
         >
-          {DEMO_WORKERS.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </select>
+          {DEMO_WORKERS.map((w) => {
+            const selected = w.id === workerId
+            return (
+              <button
+                key={w.id}
+                type="button"
+                className={
+                  selected
+                    ? 'worker-picker__option worker-picker__option--selected'
+                    : 'worker-picker__option'
+                }
+                aria-pressed={selected}
+                aria-label={w.name}
+                data-testid={`worker-option-${w.id}`}
+                onClick={() => {
+                  setBanner(null)
+                  setWorkerId(w.id)
+                }}
+              >
+                {selected ? (
+                  <span className="worker-picker__check" aria-hidden="true">
+                    ✓
+                  </span>
+                ) : null}
+                <span>{w.name}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {isLoading ? <LoadingSkeleton rows={4} /> : null}
