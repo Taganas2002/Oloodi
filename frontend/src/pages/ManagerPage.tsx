@@ -178,9 +178,9 @@ export function ManagerPage() {
                         >
                           {inviting ? ACTION_PENDING.invite : ACTION_LABELS.invite}
                         </button>
-                      ) : (
+                      ) : assignment.participationStatus === 'INVITED' ? (
                         <span className="muted-note">Invitation sent</span>
-                      )}
+                      ) : null}
                     </div>
                   </li>
                 )

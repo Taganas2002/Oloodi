@@ -63,7 +63,7 @@ export function workerWaitingMessage(
     return 'Waiting for an invite from the shift manager.'
   }
   if (participation === 'DECLINED') {
-    return 'You declined this shift. This status is final.'
+    return 'You declined this shift.'
   }
   if (participation === 'ACCEPTED' && attendance === 'CHECKED_OUT') {
     return 'Shift complete — you are checked out.'

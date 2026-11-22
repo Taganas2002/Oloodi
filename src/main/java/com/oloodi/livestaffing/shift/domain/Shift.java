@@ -88,4 +88,11 @@ public class Shift {
     public Instant getUpdatedAt() {
         return updatedAt;
     }
+
+    /** Demo/reset helper: rewrite the shift window without changing identity or capacity. */
+    public void reschedule(Instant startsAt, Instant endsAt, Instant updatedAt) {
+        this.startsAt = startsAt;
+        this.endsAt = endsAt;
+        this.updatedAt = updatedAt;
+    }
 }

@@ -4,7 +4,11 @@ import com.oloodi.livestaffing.assignment.domain.AttendanceStatus;
 import com.oloodi.livestaffing.assignment.domain.ParticipationStatus;
 import com.oloodi.livestaffing.assignment.domain.ShiftAssignment;
 import com.oloodi.livestaffing.assignment.repository.ShiftAssignmentRepository;
+import com.oloodi.livestaffing.shift.domain.Shift;
+import com.oloodi.livestaffing.shift.repository.ShiftRepository;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -14,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Restores demo seed assignment states for deterministic E2E / local demos.
+ * Also aligns the demo shift window to the current America/Montreal calendar day
+ * (09:00–17:00) so check-in/out timestamps share the same date as the shift UI.
  * Only exposed via {@link DevResetController} when the local/demo/test profile is active.
  */
 @Service
@@ -28,14 +34,28 @@ public class DevResetService {
             UUID.fromString("33333333-3333-3333-3333-333333333303"));
 
     private final ShiftAssignmentRepository assignmentRepository;
+    private final ShiftRepository shiftRepository;
+    private final Clock clock;
 
-    public DevResetService(ShiftAssignmentRepository assignmentRepository) {
+    public DevResetService(
+            ShiftAssignmentRepository assignmentRepository,
+            ShiftRepository shiftRepository,
+            Clock clock) {
         this.assignmentRepository = assignmentRepository;
+        this.shiftRepository = shiftRepository;
+        this.clock = clock;
     }
 
     @Transactional
     public int resetDemoAssignments() {
-        Instant stamp = Instant.parse("2026-11-01T12:00:00Z");
+        Instant stamp = Instant.now(clock).truncatedTo(ChronoUnit.MICROS);
+        Shift shift = shiftRepository
+                .findById(SHIFT_ID)
+                .orElseThrow(() -> new IllegalStateException("Missing seed shift " + SHIFT_ID));
+        DemoShiftSchedule.Window window = DemoShiftSchedule.windowFor(clock);
+        shift.reschedule(window.startsAt(), window.endsAt(), stamp);
+        shiftRepository.save(shift);
+
         int updated = 0;
         for (UUID id : ASSIGNMENT_IDS) {
             ShiftAssignment assignment = assignmentRepository
@@ -50,7 +70,11 @@ public class DevResetService {
             assignmentRepository.save(assignment);
             updated++;
         }
-        log.info("Dev reset restored {} demo assignments to UNINVITED/NOT_STARTED", updated);
+        log.info(
+                "Dev reset restored {} demo assignments to UNINVITED/NOT_STARTED; shift window {} – {}",
+                updated,
+                window.startsAt(),
+                window.endsAt());
         return updated;
     }
 }

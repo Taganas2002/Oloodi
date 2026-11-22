@@ -151,7 +151,7 @@ test('7 Alex decline is final', async ({ browser, request }) => {
   await waitForParticipation(worker.page, 'INVITED')
   await worker.page.getByTestId('action-decline').click()
   await waitForParticipation(worker.page, 'DECLINED')
-  await expect(worker.page.getByText(/final/i)).toBeVisible()
+  await expect(worker.page.getByText('You declined this shift.')).toBeVisible()
   await expect(worker.page.getByTestId('action-accept')).toHaveCount(0)
   await waitForManagerWorkerStatus(
     manager.page,

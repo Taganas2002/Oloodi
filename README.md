@@ -37,6 +37,8 @@ Compose uses `host.docker.internal` so containers reach published host ports (re
 # or: curl -X POST http://localhost:8080/api/dev/reset
 ```
 
+Reset restores all three workers to `UNINVITED` / `NOT_STARTED` (no check-in/out timestamps) and rewrites the demo shift window to the **current America/Montreal calendar day, 09:00–17:00**, so the shift date stays consistent with newly generated check-in/out timestamps. Flyway seed dates are placeholders only.
+
 Stop:
 
 ```bash
@@ -128,13 +130,17 @@ Stable demo UUIDs: shift `11111111-…-1111`; assignments `…301` Sarah, `…30
 |------|--------|-----|
 | UNINVITED + NOT_STARTED | invite | INVITED + NOT_STARTED |
 | INVITED + NOT_STARTED | accept | ACCEPTED + NOT_STARTED |
-| INVITED + NOT_STARTED | decline | DECLINED + NOT_STARTED (**FINAL**) |
+| INVITED + NOT_STARTED | decline | DECLINED + NOT_STARTED (**FINAL** — no decline→accept) |
 | ACCEPTED + NOT_STARTED | cancel | CANCELLED + NOT_STARTED |
 | CANCELLED + NOT_STARTED | accept | ACCEPTED + NOT_STARTED |
 | ACCEPTED + NOT_STARTED | check-in | ACCEPTED + CHECKED_IN (`checkedInAt` once) |
 | ACCEPTED + CHECKED_IN | check-out | ACCEPTED + CHECKED_OUT (`checkedOutAt` once) |
 
 Already-in-target → **idempotent no-op** (timestamps unchanged). All other transitions → **409 ProblemDetail**.
+
+**DECLINED is final:** once a worker declines, they cannot accept that assignment again (challenge assumption; cancel→accept remains available).
+
+Temporal check-in windows are intentionally not enforced because the challenge defines check-in eligibility through participation and attendance state. A production system could additionally enforce a configurable check-in window relative to the shift start time.
 
 ---
 
@@ -196,7 +202,7 @@ Errors: Spring `ProblemDetail` (400 / 404 / 409 / 500). No stack traces in bodie
 
 | Suite | Command | Result |
 |-------|---------|--------|
-| Backend | `mvn test` | **53** passed |
+| Backend | `mvn test` | **55** passed |
 | Frontend unit | `cd frontend && npm test` | **29** passed |
 | Frontend build | `cd frontend && npm run build` | **SUCCESS** |
 | Playwright E2E | `cd frontend && npm run test:e2e` | **10** passed |

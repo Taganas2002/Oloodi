@@ -36,7 +36,7 @@ describe('getWorkerActions', () => {
   it('has no actions for final DECLINED and CHECKED_OUT', () => {
     expect(getWorkerActions('DECLINED', 'NOT_STARTED')).toEqual([])
     expect(getWorkerActions('ACCEPTED', 'CHECKED_OUT')).toEqual([])
-    expect(workerWaitingMessage('DECLINED', 'NOT_STARTED')).toMatch(/final/)
+    expect(workerWaitingMessage('DECLINED', 'NOT_STARTED')).toBe('You declined this shift.')
   })
 })
 
