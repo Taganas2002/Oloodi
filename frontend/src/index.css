@@ -438,6 +438,14 @@ select {
   align-items: center;
 }
 
+.worker-row__invited:disabled {
+  opacity: 1;
+  color: var(--ink-muted);
+  border-color: var(--line);
+  background: var(--bg-accent);
+  cursor: default;
+}
+
 .badge-row,
 .status-groups {
   display: flex;

@@ -180,6 +180,15 @@ export function ManagerPage() {
                         >
                           {inviting ? ACTION_PENDING.invite : ACTION_LABELS.invite}
                         </button>
+                      ) : assignment.participationStatus === 'INVITED' ? (
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm worker-row__invited"
+                          disabled
+                          aria-label={`${assignment.workerName} already invited`}
+                        >
+                          Invited
+                        </button>
                       ) : null}
                     </div>
                   </li>
