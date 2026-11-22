@@ -438,7 +438,7 @@ select {
   align-items: center;
 }
 
-.worker-row__invited:disabled {
+.worker-row__action-status:disabled {
   opacity: 1;
   color: var(--ink-muted);
   border-color: var(--line);

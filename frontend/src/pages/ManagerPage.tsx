@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { DEMO_SHIFT_ID } from '../api/demoIds'
-import type { Assignment } from '../api/types'
+import type { Assignment, ParticipationStatus } from '../api/types'
 import { AppShell } from '../components/AppShell'
 import { AttendanceBadge, ParticipationBadge } from '../components/StatusBadge'
 import { ErrorBanner } from '../components/ErrorBanner'
@@ -18,6 +18,22 @@ import { canManagerInvite } from '../lib/actions'
 import { toUserMessage } from '../lib/errors'
 import { formatLastSyncLabel } from '../lib/lastSync'
 import { formatLocalDate, formatLocalDateTime, formatLocalTime } from '../lib/format'
+
+/** Non-clickable Action-column label when invite is no longer available. */
+function managerActionStatusLabel(participation: ParticipationStatus): string | null {
+  switch (participation) {
+    case 'INVITED':
+      return 'Invited'
+    case 'CANCELLED':
+      return 'Cancelled'
+    case 'DECLINED':
+      return 'Declined'
+    case 'ACCEPTED':
+      return 'Accepted'
+    default:
+      return null
+  }
+}
 
 export function ManagerPage() {
   const shiftId = DEMO_SHIFT_ID
@@ -146,6 +162,7 @@ export function ManagerPage() {
               </li>
               {data.assignments.map((assignment) => {
                 const inviting = pendingId === assignment.id && mutation.isPending
+                const actionStatus = managerActionStatusLabel(assignment.participationStatus)
                 return (
                   <li
                     className="worker-row"
@@ -180,14 +197,14 @@ export function ManagerPage() {
                         >
                           {inviting ? ACTION_PENDING.invite : ACTION_LABELS.invite}
                         </button>
-                      ) : assignment.participationStatus === 'INVITED' ? (
+                      ) : actionStatus ? (
                         <button
                           type="button"
-                          className="btn btn--ghost btn--sm worker-row__invited"
+                          className="btn btn--ghost btn--sm worker-row__action-status"
                           disabled
-                          aria-label={`${assignment.workerName} already invited`}
+                          aria-label={`${assignment.workerName}: ${actionStatus}`}
                         >
-                          Invited
+                          {actionStatus}
                         </button>
                       ) : null}
                     </div>
