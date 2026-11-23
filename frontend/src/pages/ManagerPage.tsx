@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { DEMO_SHIFT_ID } from '../api/demoIds'
-import type { Assignment } from '../api/types'
+import type { Assignment, ParticipationStatus } from '../api/types'
 import { AppShell } from '../components/AppShell'
 import { AttendanceBadge, ParticipationBadge } from '../components/StatusBadge'
 import { ErrorBanner } from '../components/ErrorBanner'
@@ -18,6 +18,22 @@ import { canManagerInvite } from '../lib/actions'
 import { toUserMessage } from '../lib/errors'
 import { formatLastSyncLabel } from '../lib/lastSync'
 import { formatLocalDate, formatLocalDateTime, formatLocalTime } from '../lib/format'
+
+/** Non-clickable Action-column label when invite is no longer available. */
+function managerActionStatusLabel(participation: ParticipationStatus): string | null {
+  switch (participation) {
+    case 'INVITED':
+      return 'Invited'
+    case 'CANCELLED':
+      return 'Cancelled'
+    case 'DECLINED':
+      return 'Declined'
+    case 'ACCEPTED':
+      return 'Accepted'
+    default:
+      return null
+  }
+}
 
 export function ManagerPage() {
   const shiftId = DEMO_SHIFT_ID
@@ -136,36 +152,39 @@ export function ManagerPage() {
               <p className="panel__hint">Participation and attendance are shown separately.</p>
             </div>
             <ul className="worker-list">
+              <li className="worker-list__head" aria-hidden="true">
+                <span>Worker</span>
+                <span>Participation</span>
+                <span>Attendance</span>
+                <span>Check in</span>
+                <span>Check out</span>
+                <span>Action</span>
+              </li>
               {data.assignments.map((assignment) => {
                 const inviting = pendingId === assignment.id && mutation.isPending
+                const actionStatus = managerActionStatusLabel(assignment.participationStatus)
                 return (
                   <li
                     className="worker-row"
                     key={assignment.id}
                     data-testid={`worker-row-${assignment.workerId}`}
                   >
-                    <div className="worker-row__main">
-                      <p className="worker-row__name">{assignment.workerName}</p>
-                      <div className="status-groups">
-                        <div className="status-group">
-                          <span className="status-group__label">Participation</span>
-                          <ParticipationBadge status={assignment.participationStatus} />
-                        </div>
-                        <div className="status-group">
-                          <span className="status-group__label">Attendance</span>
-                          <AttendanceBadge status={assignment.attendanceStatus} />
-                        </div>
-                      </div>
-                      <dl className="worker-row__times">
-                        <div>
-                          <dt>Checked in</dt>
-                          <dd>{formatLocalDateTime(assignment.checkedInAt)}</dd>
-                        </div>
-                        <div>
-                          <dt>Checked out</dt>
-                          <dd>{formatLocalDateTime(assignment.checkedOutAt)}</dd>
-                        </div>
-                      </dl>
+                    <p className="worker-row__name">{assignment.workerName}</p>
+                    <div className="worker-row__status">
+                      <span className="worker-row__field-label">Participation</span>
+                      <ParticipationBadge status={assignment.participationStatus} />
+                    </div>
+                    <div className="worker-row__status">
+                      <span className="worker-row__field-label">Attendance</span>
+                      <AttendanceBadge status={assignment.attendanceStatus} />
+                    </div>
+                    <div className="worker-row__time">
+                      <span className="worker-row__field-label">Check in</span>
+                      <span>{formatLocalDateTime(assignment.checkedInAt)}</span>
+                    </div>
+                    <div className="worker-row__time">
+                      <span className="worker-row__field-label">Check out</span>
+                      <span>{formatLocalDateTime(assignment.checkedOutAt)}</span>
                     </div>
                     <div className="worker-row__actions">
                       {canManagerInvite(assignment.participationStatus) ? (
@@ -178,8 +197,15 @@ export function ManagerPage() {
                         >
                           {inviting ? ACTION_PENDING.invite : ACTION_LABELS.invite}
                         </button>
-                      ) : assignment.participationStatus === 'INVITED' ? (
-                        <span className="muted-note">Invitation sent</span>
+                      ) : actionStatus ? (
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm worker-row__action-status"
+                          disabled
+                          aria-label={`${assignment.workerName}: ${actionStatus}`}
+                        >
+                          {actionStatus}
+                        </button>
                       ) : null}
                     </div>
                   </li>

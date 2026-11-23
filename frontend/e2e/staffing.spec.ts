@@ -330,10 +330,37 @@ test('13 reconnect catch-up via aborted SSE then restore', async ({ browser, req
   await worker.context.close()
 })
 
-test('dev reset endpoint is available for e2e', async ({ request }) => {
+test('demo reset refreshes both live dashboards and is repeatable', async ({ browser, request }) => {
+  const manager = await openManager(browser)
+  const worker = await openWorker(browser, WORKERS.sarah.name)
+  for (const action of ['invite', 'accept', 'check-in', 'check-out']) {
+    expect((await postAction(request, WORKERS.sarah.assignmentId, action)).ok()).toBeTruthy()
+  }
+  await waitForAttendance(worker.page, 'CHECKED_OUT')
+  await expectCounts(manager.page, { filled: 1, remaining: 2, checkedIn: 0, checkedOut: 1 })
+
   const res = await request.post(`${API_URL}/api/dev/reset`)
   expect(res.ok()).toBeTruthy()
   const body = await res.json()
   expect(body.status).toBe('ok')
   expect(body.updatedAssignments).toBe(3)
+
+  await waitForParticipation(worker.page, 'UNINVITED')
+  await waitForAttendance(worker.page, 'NOT_STARTED')
+  for (const seededWorker of Object.values(WORKERS)) {
+    await waitForManagerWorkerStatus(manager.page, seededWorker.id, 'UNINVITED', 'NOT_STARTED')
+  }
+  await expectCounts(manager.page, { filled: 0, remaining: 3, checkedIn: 0, checkedOut: 0 })
+
+  const restored = await getDashboard(request)
+  expect(restored.shift.requiredWorkers).toBe(3)
+  expect(restored.assignments).toHaveLength(3)
+  for (const assignment of restored.assignments) {
+    expect(assignment.checkedInAt).toBeNull()
+    expect(assignment.checkedOutAt).toBeNull()
+  }
+  await resetDemo(request)
+  expect(await getDashboard(request)).toEqual(restored)
+  await manager.context.close()
+  await worker.context.close()
 })

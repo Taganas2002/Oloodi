@@ -1,6 +1,6 @@
 # Demo script (5–7 minutes)
 
-**Prep:** `docker compose up --build` (or local BE `local` + FE). Open two windows: **Manager** and **Worker**. Run `./scripts/reset-demo.sh` once.
+**Prep:** Run `docker compose up --build --wait` (or start the backend with the `local` profile and the Vite frontend). Open the **Manager** and **Worker** dashboards in separate windows. Before each walkthrough, run `bash scripts/reset-demo.sh` or, in PowerShell, `curl.exe --fail --request POST http://127.0.0.1:8080/api/dev/reset` against your demo stack.
 
 ---
 

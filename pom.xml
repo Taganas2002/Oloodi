@@ -95,7 +95,6 @@
                     </includes>
                     <environmentVariables>
                         <TESTCONTAINERS_RYUK_DISABLED>true</TESTCONTAINERS_RYUK_DISABLED>
-                        <DOCKER_HOST>unix:///var/run/docker.sock</DOCKER_HOST>
                     </environmentVariables>
                 </configuration>
             </plugin>
