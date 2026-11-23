@@ -38,10 +38,7 @@ public class ShiftSseService {
 
     public SseEmitter subscribe(UUID shiftId) {
         SseEmitter emitter = new SseEmitter(EMITTER_TIMEOUT_MS);
-        CopyOnWriteArrayList<SseEmitter> emitters =
-                emittersByShift.computeIfAbsent(shiftId, id -> new CopyOnWriteArrayList<>());
-        emitters.add(emitter);
-        log.info("SSE connect shiftId={} subscribers={}", shiftId, emitters.size());
+        log.info("SSE connect shiftId={} subscribers={}", shiftId, addEmitter(shiftId, emitter));
 
         Runnable remove = () -> removeEmitter(shiftId, emitter);
         emitter.onCompletion(remove);
@@ -152,20 +149,26 @@ public class ShiftSseService {
 
     /** Test-only registration of a prebuilt emitter into the registry. */
     void registerForTest(UUID shiftId, SseEmitter emitter) {
-        emittersByShift.computeIfAbsent(shiftId, id -> new CopyOnWriteArrayList<>()).add(emitter);
+        addEmitter(shiftId, emitter);
+    }
+
+    private int addEmitter(UUID shiftId, SseEmitter emitter) {
+        return emittersByShift.compute(shiftId, (id, emitters) -> {
+            if (emitters == null) {
+                emitters = new CopyOnWriteArrayList<>();
+            }
+            emitters.add(emitter);
+            return emitters;
+        }).size();
     }
 
     void removeEmitter(UUID shiftId, SseEmitter emitter) {
-        CopyOnWriteArrayList<SseEmitter> emitters = emittersByShift.get(shiftId);
-        if (emitters == null) {
-            return;
-        }
-        if (emitters.remove(emitter)) {
-            log.info("SSE disconnect shiftId={} subscribers={}", shiftId, emitters.size());
-        }
-        if (emitters.isEmpty()) {
-            emittersByShift.remove(shiftId, emitters);
-        }
+        emittersByShift.computeIfPresent(shiftId, (id, emitters) -> {
+            if (emitters.remove(emitter)) {
+                log.info("SSE disconnect shiftId={} subscribers={}", shiftId, emitters.size());
+            }
+            return emitters.isEmpty() ? null : emitters;
+        });
     }
 
     private static boolean isClientDisconnect(Throwable ex) {

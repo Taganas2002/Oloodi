@@ -15,9 +15,8 @@ This is a coding-challenge submission (Phases 1–8). It is **not** a production
 ## Quick start (Docker — preferred)
 
 ```bash
-cd live-staffing-dashboard
-docker compose down -v          # clean volumes
-docker compose up --build       # postgres + backend + frontend
+cd Oloodi
+docker compose up --build --wait  # postgres + backend + frontend
 ```
 
 Wait until all services are **healthy**, then open the Manager/Worker URLs above.
@@ -33,18 +32,16 @@ Compose uses `host.docker.internal` so containers reach published host ports (re
 **Reset demo data** (local/demo profile only — never production):
 
 ```bash
-./scripts/reset-demo.sh
-# or: curl -X POST http://localhost:8080/api/dev/reset
+bash scripts/reset-demo.sh
+# Windows PowerShell: curl.exe --fail --request POST http://127.0.0.1:8080/api/dev/reset
 ```
 
-Reset restores all three workers to `UNINVITED` / `NOT_STARTED` (no check-in/out timestamps) and rewrites the demo shift window to the **current America/Montreal calendar day, 09:00–17:00**, so the shift date stays consistent with newly generated check-in/out timestamps. Flyway seed dates are placeholders only.
+Run reset before each walkthrough. It restores the seeded shift to three required workers and the **current America/Montreal calendar day, 09:00–17:00**. The three seeded assignments return to `UNINVITED` / `NOT_STARTED` with empty check-in/out timestamps. Open live dashboards refresh automatically. The reset updates only the existing demo shift and its three seeded assignments, with no inserts or deletes. You can demo before 09:00 or after 17:00 because the workflow uses status-based eligibility.
 
 Stop:
 
 ```bash
 docker compose down
-# wipe DB volume:
-docker compose down -v
 ```
 
 Demo credentials in Compose are intentional placeholders (`oloodi` / `oloodi`). See `.env.example`.
@@ -198,14 +195,16 @@ Errors: Spring `ProblemDetail` (400 / 404 / 409 / 500). No stack traces in bodie
 
 ---
 
-## Tests (executed on this VM)
+## Test commands
 
-| Suite | Command | Result |
-|-------|---------|--------|
-| Backend | `mvn test` | **55** passed |
-| Frontend unit | `cd frontend && npm test` | **29** passed |
-| Frontend build | `cd frontend && npm run build` | **SUCCESS** |
-| Playwright E2E | `cd frontend && npm run test:e2e` | **10** passed |
+| Suite | Command |
+|-------|---------|
+| Backend (JDK 21, running Docker for Testcontainers) | `mvn verify` |
+| Frontend lint, TypeScript and production build (from `frontend/`) | `npm run lint` and `npm run build` |
+| Frontend unit (from `frontend/`) | `npm test` |
+| Playwright E2E (from `frontend/`) | `npx playwright install chromium` then `npm run test:e2e` |
+
+Playwright resets the seeded demo data before each test. Run it against a dedicated local database with the backend `local` profile and the Vite development server from the setup below. Defaults are `http://127.0.0.1:8080` for the API and `http://127.0.0.1:5173` for Vite. Override them with `E2E_API_URL` and `E2E_BASE_URL` when using different ports.
 
 E2E covers Sarah lifecycle (no refresh), persistence reload, Daniel cancel→accept, Alex decline, API 409s, duplicate check-in/out timestamps, dual worker contexts, counts, reconnect catch-up, and `/api/dev/reset`.
 
@@ -235,7 +234,7 @@ cd frontend && npm run measure
 
 ---
 
-## Local setup (without Docker UI)
+## Local setup (Java 21, Maven, Node 24.15+, PostgreSQL 16)
 
 ```bash
 # Postgres
@@ -246,11 +245,11 @@ export DB_USER=oloodi DB_PASSWORD=oloodi
 SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
 
 # Frontend
-cd frontend && npm install
+cd frontend && npm ci
 VITE_API_BASE_URL=http://127.0.0.1:8080 npm run dev   # helpful for SSE under Playwright
 ```
 
-Copy `.env.example` → `.env` for overrides (never commit secrets).
+For a local Maven run, create the `live_staffing` database and export the backend variables shown above with values for your PostgreSQL instance. For PowerShell, set them with `$env:DB_URL = '...'` and the same syntax for the other variables, then run `mvn spring-boot:run`. `.env.example` lists available environment variables.
 
 **Testcontainers note (Docker 29):** if the client API is “too old”, set `"min-api-version": "1.24"` in `/etc/docker/daemon.json` and restart Docker.
 
@@ -258,7 +257,7 @@ Copy `.env.example` → `.env` for overrides (never commit secrets).
 
 ## Challenges & limitations
 
-- Open demo (no auth) — fine for interview demo, not for prod
+- Open demo API without authentication or role enforcement. The Manager dashboard exposes Invite, and the Worker dashboard exposes worker actions, including Cancel.
 - Single-node SSE registry (not multi-instance sticky/broadcast)
 - Dev reset + CORS only on `local` / `demo` / `test`
 - Tiny dataset; no pagination
@@ -286,7 +285,7 @@ AuthN/Z, multi-instance SSE (Redis pub/sub or broker), observability, rate limit
 ## Layout
 
 ```
-live-staffing-dashboard/
+Oloodi/
   src/                  Spring Boot backend
   frontend/             React + Playwright + measurements
   scripts/reset-demo.sh

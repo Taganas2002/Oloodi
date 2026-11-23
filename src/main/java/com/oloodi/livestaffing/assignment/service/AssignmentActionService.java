@@ -78,7 +78,8 @@ public class AssignmentActionService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Assignment not found: " + assignmentId + " for shift " + shiftId));
         ShiftAssignment updated = transition.apply(assignment);
-        assignmentRepository.save(updated);
+        // Flush before building the response so its version matches the committed row.
+        assignmentRepository.saveAndFlush(updated);
         // Published inside the TX; AFTER_COMMIT listener delivers SSE only if commit succeeds.
         eventPublisher.publishEvent(AssignmentChangedEvent.of(
                 shiftId, assignmentId, action, Instant.now(clock).truncatedTo(ChronoUnit.MICROS)));

@@ -69,10 +69,14 @@ class IdempotencyHttpIT extends AbstractPostgresIntegrationTest {
 
     @Test
     void duplicateInviteDoesNotCreateRowsAndKeepsState() throws Exception {
-        mockMvc.perform(post(base(DemoIds.ASSIGNMENT_SARAH) + "/invite")).andExpect(status().isOk());
-        mockMvc.perform(post(base(DemoIds.ASSIGNMENT_SARAH) + "/invite"))
+        String endpoint = base(DemoIds.ASSIGNMENT_SARAH) + "/invite";
+        MvcResult first = mockMvc.perform(post(endpoint)).andExpect(status().isOk()).andReturn();
+        MvcResult repeated = mockMvc.perform(post(endpoint))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.participationStatus").value("INVITED"));
+                .andExpect(jsonPath("$.participationStatus").value("INVITED"))
+                .andReturn();
+        assertThat(objectMapper.readTree(repeated.getResponse().getContentAsString()))
+                .isEqualTo(objectMapper.readTree(first.getResponse().getContentAsString()));
 
         mockMvc.perform(get("/api/shifts/" + DemoIds.SHIFT_ID + "/assignments"))
                 .andExpect(status().isOk())
