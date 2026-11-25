@@ -1,6 +1,8 @@
 package com.oloodi.livestaffing.dev;
 
+import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -25,13 +27,18 @@ import org.springframework.web.filter.CorsFilter;
 public class LocalCorsConfig {
 
     @Bean
-    public CorsFilter localCorsFilter() {
+    public CorsFilter localCorsFilter(
+            @Value("${app.cors.allowed-origin:}") String configuredOrigin) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(false);
         // Patterns cover Vite (:5173) / CRA (:3000) and any other local port.
         // (Spring does not allow mixing allowedOrigins + allowedOriginPatterns.)
-        config.setAllowedOriginPatterns(
+        List<String> origins = new ArrayList<>(
                 List.of("http://localhost:*", "http://127.0.0.1:*", "http://[::1]:*"));
+        if (configuredOrigin != null && !configuredOrigin.isBlank()) {
+            origins.add(configuredOrigin.trim());
+        }
+        config.setAllowedOriginPatterns(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("*"));

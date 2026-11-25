@@ -1,0 +1,59 @@
+# Oloodi Live Staffing — free interview/demo Blueprint
+# Apply in Render: Dashboard → New → Blueprint → connect Taganas2002/Oloodi
+# Do not put DB passwords or personal secrets in this file.
+#
+# After first sync you must set (Dashboard → Environment):
+#   - API: APP_CORS_ALLOWED_ORIGIN = exact Static Site URL (https://….onrender.com)
+#   - Static Site build env: VITE_API_BASE_URL = exact API URL (https://….onrender.com, no slash)
+# Then Manual Deploy both services.
+#
+# Free-tier honesty: API spins down after ~15 min without inbound HTTP/WebSocket.
+# Open SSE streams alone do NOT keep the Free instance awake. Cold start ~1 min.
+
+databases:
+  - name: oloodi-demo-db
+    plan: free
+    databaseName: live_staffing
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: oloodi-demo-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/shifts/11111111-1111-1111-1111-111111111111/dashboard
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: demo
+      - key: DB_USER
+        fromDatabase:
+          name: oloodi-demo-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: oloodi-demo-db
+          property: password
+      # Spring expects jdbc:postgresql://host:5432/db (not postgres://).
+      # Paste Internal Database URL host/db into JDBC form in the Dashboard prompt.
+      - key: DB_URL
+        sync: false
+      # Exact Static Site origin, e.g. https://oloodi-demo-web.onrender.com
+      - key: APP_CORS_ALLOWED_ORIGIN
+        sync: false
+
+  - type: web
+    name: oloodi-demo-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Exact API public URL, no trailing slash. Required at build time (Vite).
+      - key: VITE_API_BASE_URL
+        sync: false
