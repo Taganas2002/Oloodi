@@ -21,6 +21,8 @@ docker compose up --build --wait  # postgres + backend + frontend
 
 Wait until all services are **healthy**, then open the Manager/Worker URLs above.
 
+For a short-lived free public interview demo, see [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md). The hosted demo is open and should only contain synthetic data.
+
 | Service | Host port |
 |---------|-----------|
 | Frontend (nginx) | **3000** |
