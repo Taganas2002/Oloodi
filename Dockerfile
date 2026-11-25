@@ -15,5 +15,5 @@ COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=5s --start-period=90s --retries=18 \
-  CMD-SHELL curl -fsS "http://127.0.0.1:${PORT:-8080}/api/shifts/11111111-1111-1111-1111-111111111111/dashboard" >/dev/null || exit 1
+  CMD curl -fsS "http://127.0.0.1:${PORT:-8080}/api/shifts/11111111-1111-1111-1111-111111111111/dashboard" >/dev/null || exit 1
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
