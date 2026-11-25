@@ -14,6 +14,17 @@ export function useDashboard(shiftId: string) {
   })
 }
 
+export function useDemoReset(shiftId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => staffingApi.resetDemo(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: dashboardKey(shiftId) })
+    },
+  })
+}
+
 /**
  * Mutation helper: 409 always invalidates so the UI shows server truth.
  * On success, skip invalidate when LIVE — SSE assignment-changed already

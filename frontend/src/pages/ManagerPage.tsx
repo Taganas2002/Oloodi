@@ -9,7 +9,7 @@ import { LiveStatus } from '../components/LiveStatus'
 import { StaffingProgress } from '../components/StaffingProgress'
 import { SummaryCards } from '../components/SummaryCards'
 import { ToastStack } from '../components/Toast'
-import { useAssignmentAction, useDashboard } from '../hooks/useDashboard'
+import { useAssignmentAction, useDashboard, useDemoReset } from '../hooks/useDashboard'
 import { useLiveRestoreToast } from '../hooks/useLiveRestoreToast'
 import { useShiftLiveUpdates } from '../hooks/useShiftLiveUpdates'
 import { useToasts } from '../hooks/useToasts'
@@ -41,6 +41,7 @@ export function ManagerPage() {
   const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } =
     useDashboard(shiftId)
   const mutation = useAssignmentAction(shiftId, liveState)
+  const resetMutation = useDemoReset(shiftId)
   const [banner, setBanner] = useState<string | null>(null)
   const [pendingId, setPendingId] = useState<string | null>(null)
   const { toasts, pushToast, dismissToast } = useToasts()
@@ -68,6 +69,19 @@ export function ManagerPage() {
       setBanner(toUserMessage(err))
     } finally {
       setPendingId(null)
+    }
+  }
+
+  async function resetDemo() {
+    if (!window.confirm('Reset the demo? All three workers will return to Invited / Not started.')) {
+      return
+    }
+    setBanner(null)
+    try {
+      const result = await resetMutation.mutateAsync()
+      pushToast(`Demo reset. ${result.updatedAssignments} workers are invited.`, 'success')
+    } catch (err) {
+      setBanner(toUserMessage(err))
     }
   }
 
@@ -102,6 +116,15 @@ export function ManagerPage() {
               </div>
               <div className="shift-panel__tools">
                 <LiveStatus state={liveState} lastSyncLabel={lastSyncLabel} />
+                <button
+                  type="button"
+                  className="btn btn--secondary btn--sm"
+                  onClick={() => void resetDemo()}
+                  disabled={resetMutation.isPending || mutation.isPending}
+                  title="Restore all demo workers to Invited / Not started"
+                >
+                  {resetMutation.isPending ? 'Resetting…' : 'Reset demo'}
+                </button>
                 <button
                   type="button"
                   className="btn btn--ghost btn--sm"
@@ -191,7 +214,7 @@ export function ManagerPage() {
                         <button
                           type="button"
                           className="btn btn--primary btn--sm"
-                          disabled={mutation.isPending}
+                          disabled={mutation.isPending || resetMutation.isPending}
                           onClick={() => void invite(assignment)}
                           aria-label={`Invite ${assignment.workerName}`}
                         >

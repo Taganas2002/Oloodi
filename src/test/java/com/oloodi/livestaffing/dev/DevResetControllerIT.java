@@ -49,7 +49,7 @@ class DevResetControllerIT extends AbstractPostgresIntegrationTest {
 
         assertThat(assignmentRepository.findAllByShiftIdWithWorker(DemoIds.SHIFT_ID))
                 .hasSize(3)
-                .allMatch(a -> a.getParticipationStatus() == ParticipationStatus.UNINVITED)
+                .allMatch(a -> a.getParticipationStatus() == ParticipationStatus.INVITED)
                 .allMatch(a -> a.getAttendanceStatus() == AttendanceStatus.NOT_STARTED)
                 .allMatch(a -> a.getCheckedInAt() == null)
                 .allMatch(a -> a.getCheckedOutAt() == null);
