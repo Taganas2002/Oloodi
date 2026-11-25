@@ -69,18 +69,18 @@ public class DevResetService {
             ShiftAssignment assignment = assignmentRepository
                     .findByShiftIdAndIdWithWorker(SHIFT_ID, id)
                     .orElseThrow(() -> new IllegalStateException("Missing seed assignment " + id));
-            if (assignment.getParticipationStatus() != ParticipationStatus.UNINVITED
+            if (assignment.getParticipationStatus() != ParticipationStatus.INVITED
                     || assignment.getAttendanceStatus() != AttendanceStatus.NOT_STARTED
                     || assignment.getCheckedInAt() != null
                     || assignment.getCheckedOutAt() != null) {
-                assignment.applyState(ParticipationStatus.UNINVITED, AttendanceStatus.NOT_STARTED,
+                assignment.applyState(ParticipationStatus.INVITED, AttendanceStatus.NOT_STARTED,
                         null, null, stamp);
             }
         }
         // Clients refetch the whole shift. One event refreshes both views after commit.
         eventPublisher.publishEvent(AssignmentChangedEvent.of(SHIFT_ID, ASSIGNMENT_IDS.getFirst(), "reset", stamp));
         log.info(
-                "Dev reset restored {} demo assignments to UNINVITED/NOT_STARTED; shift window {} – {}",
+                "Dev reset restored {} demo assignments to INVITED/NOT_STARTED; shift window {} – {}",
                 ASSIGNMENT_IDS.size(),
                 window.startsAt(),
                 window.endsAt());

@@ -45,6 +45,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const staffingApi = {
+  resetDemo(): Promise<{ status: string; updatedAssignments: number; shiftId: string }> {
+    return request('/api/dev/reset', { method: 'POST' })
+  },
+
   getDashboard(shiftId: string): Promise<DashboardResponse> {
     return request(`/api/shifts/${shiftId}/dashboard`)
   },
